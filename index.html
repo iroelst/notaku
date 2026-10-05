@@ -798,6 +798,20 @@ header .brand{flex:1}
   }
 }
 
+
+/* Modal Catat Pembayaran */
+.payment-modal{position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(10,31,55,.48);backdrop-filter:blur(4px)}
+.payment-modal.show{display:flex}
+.payment-modal-card{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 55px rgba(10,35,65,.22);padding:20px}
+.payment-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.payment-modal-head h3{margin:0;color:var(--navy);font-size:18px}
+.payment-modal-close{width:38px;min-height:38px;padding:0;background:#edf3f9;color:var(--navy);font-size:20px}
+.payment-modal-info{background:#f5f9fd;border:1px solid #dce7f1;border-radius:12px;padding:11px 13px;margin-bottom:14px}
+.payment-modal-info div{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.payment-modal-info .left{color:var(--muted)}
+.payment-modal-actions{display:flex;gap:8px;margin-top:16px}
+.payment-modal-actions button{flex:1}
+@media(max-width:480px){.payment-modal{padding:12px}.payment-modal-card{padding:16px;border-radius:16px}}
 </style>
 </head>
 <body>
@@ -810,7 +824,7 @@ header .brand{flex:1}
 <main>
 <section id="dashboard" class="page active">
 <div class="titlebar"><div><h2>Dashboard</h2><div class="muted">Ringkasan aktivitas usaha Anda</div></div><button onclick="showPage('create')">＋ Buat Nota</button></div>
-<div class="grid"><div class="card"><div class="label">Total Nota</div><strong id="statCount">0</strong></div><div class="card"><div class="label">Total Nilai Nota</div><strong id="statTotal">Rp0</strong></div><div class="card"><div class="label">Sisa Tagihan</div><strong id="statDue">Rp0</strong></div></div>
+<div class="grid"><div class="card"><div class="label">Total Nota</div><strong id="statCount">0</strong></div><div class="card"><div class="label">Total Nilai Nota</div><strong id="statTotal">Rp0</strong></div><div class="card"><div class="label">Nominal Lunas</div><strong id="statPaid">Rp0</strong></div><div class="card"><div class="label">Sisa Tagihan</div><strong id="statDue">Rp0</strong></div></div>
 <div class="panel" style="margin-top:16px"><h3>Nota Terbaru</h3><div id="recent"></div></div>
 </section>
 <section id="create" class="page">
@@ -841,7 +855,21 @@ header .brand{flex:1}
 <form id="profileForm" class="panel"><div class="fields"><div class="full"><label>Logo usaha</label><input id="logoFile" type="file" accept="image/*"><div id="logoPreview" class="hint">Belum ada logo</div></div><div><label>Nama usaha</label><input id="bizName" placeholder="Nama usaha"></div><div><label>No. telepon</label><input id="bizPhone"></div><div class="full"><label>Alamat</label><textarea id="bizAddress"></textarea></div><div><label>Nama bank</label><input id="bankName"></div><div><label>Nomor rekening</label><input id="bankNumber"></div><div class="full"><label>Atas nama rekening</label><input id="bankOwner"></div><div class="full"><label>Nama untuk Hormat Kami</label><input id="signerName" placeholder="Masukkan nama penanggung jawab"><div class="hint">Nama ini akan tampil di bawah tulisan “Hormat Kami” pada nota.</div></div><div class="full"><label>Catatan default nota</label><textarea id="bizDefaultNote" rows="3" placeholder="Barang yang sudah dibeli tidak bisa dikembalikan. Terima kasih."></textarea><div class="hint">Catatan ini otomatis dicantumkan pada setiap nota baru dan bisa Anda edit kapan saja.</div></div></div><div class="actions"><button>Simpan Profil</button></div></form>
 <div class="panel"><h3>Backup Data</h3><p class="muted">Unduh salinan data aplikasi sebagai file JSON. Simpan file ini di tempat aman.</p><div class="actions"><button type="button" id="backup" class="secondary">Unduh Backup</button><label class="btn secondary" style="display:inline-block">Pulihkan Backup<input id="restore" type="file" accept=".json,application/json" hidden></label></div></div>
 </section>
-<section id="invoicePrint" class="page"></section>
+<div id="paymentModal" class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+<div class="payment-modal-card">
+<div class="payment-modal-head">
+<div><h3 id="paymentModalTitle">Catat Pembayaran</h3><div class="muted" style="margin-top:3px">Masukkan pembayaran yang diterima.</div></div>
+<button type="button" class="payment-modal-close" onclick="closePaymentModal()" aria-label="Tutup">×</button>
+</div>
+<div class="payment-modal-info">
+<div><span class="left">Total Nota</span><b id="paymentTotal">Rp0</b></div>
+<div><span class="left">Sudah Dibayar</span><b id="paymentPaid">Rp0</b></div>
+<div><span class="left">Sisa Tagihan</span><b id="paymentLeft">Rp0</b></div>
+</div>
+<div><label for="paymentAmount">Nominal Pembayaran</label><input id="paymentAmount" type="number" min="1" step="1" inputmode="numeric" placeholder="Masukkan nominal"></div>
+<div style="margin-top:11px"><label for="paymentMethod">Metode Pembayaran</label><select id="paymentMethod"><option value="Tunai">Tunai</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option></select></div>
+<div class="payment-modal-actions"><button type="button" class="secondary" onclick="closePaymentModal()">Batal</button><button type="button" onclick="confirmPayment()">Simpan Pembayaran</button></div>
+</div></div><section id="invoicePrint" class="page"></section>
 </main></div><footer>NOTA DIGITAL • Data disimpan pada perangkat/browser ini. Lakukan backup secara berkala.</footer>
 <script>
 const DB='NotaDigitalDB',STORE=['profile','customers','services','invoices','payments'];let db,editingId=null,logoData='';
@@ -862,7 +890,7 @@ document.getElementById('addItem').onclick=()=>addItem();document.getElementById
 document.getElementById('invoiceForm').onsubmit=async e=>{e.preventDefault();let t=calc();if(t.total<0)return;let rows=[...document.querySelectorAll('.itemrow')].map(r=>({id:uid(),name:r.querySelector('.iname').value.trim(),qty:+r.querySelector('.iqty').value,price:+r.querySelector('.iprice').value,amount:(+r.querySelector('.iqty').value)*(+r.querySelector('.iprice').value)}));if(!rows.length||rows.some(x=>!x.name||x.qty<=0||x.price<0)){alert('Periksa rincian barang.');return}
 let prof=(await all('profile'))[0]||{};let oldInv=editingId?(await all('invoices')).find(x=>x.id===editingId):null;let inv={id:editingId||uid(),number:document.getElementById('invNo').value,date:document.getElementById('invDate').value,due:document.getElementById('invDue').value,customer:document.getElementById('invCustomer').value.trim(),phone:document.getElementById('invPhone').value.trim(),subtotal:t.sub,discount:t.discount,total:t.total,note:oldInv?.note||prof.defaultNote||'Barang yang sudah dibeli tidak bisa dikembalikan. Terima kasih.',items:rows,updatedAt:new Date().toISOString()};
 if(editingId){let old=(await all('invoices')).find(x=>x.id===editingId);inv.paid=old?.paid||0;inv.status=old?.status||'BELUM LUNAS'}else{inv.createdAt=new Date().toISOString();inv.paid=0;inv.status='BELUM LUNAS'}inv.status=inv.paid>=inv.total?'LUNAS':'BELUM LUNAS';await put('invoices',inv);let customer=(await all('customers')).find(x=>x.name.toLowerCase()===inv.customer.toLowerCase());if(!customer)await put('customers',{id:uid(),name:inv.customer,phone:inv.phone,address:''});alert('Nota berhasil disimpan: '+inv.number);editingId=null;showPage('history')};
-async function renderDashboard(){let a=await all('invoices');document.getElementById('statCount').textContent=a.filter(x=>x.status!=='DIBATALKAN').length;document.getElementById('statTotal').textContent=rupiah(a.filter(x=>x.status!=='DIBATALKAN').reduce((s,x)=>s+x.total,0));document.getElementById('statDue').textContent=rupiah(a.filter(x=>x.status!=='DIBATALKAN').reduce((s,x)=>s+Math.max(0,x.total-(x.paid||0)),0));let recent=a.sort((x,y)=>y.date.localeCompare(x.date)).slice(0,5);document.getElementById('recent').innerHTML=tableInvoices(recent)}
+async function renderDashboard(){let a=await all('invoices');let active=a.filter(x=>x.status!=='DIBATALKAN');let total=active.reduce((s,x)=>s+x.total,0);let paid=active.filter(x=>(x.paid||0)>=x.total).reduce((s,x)=>s+x.total,0);let due=active.reduce((s,x)=>s+Math.max(0,x.total-(x.paid||0)),0);document.getElementById('statCount').textContent=active.length;document.getElementById('statTotal').textContent=rupiah(total);document.getElementById('statPaid').textContent=rupiah(paid);document.getElementById('statDue').textContent=rupiah(due);let recent=[...a].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,5);document.getElementById('recent').innerHTML=tableInvoices(recent)}
 function status(inv){if(inv.status==='DIBATALKAN')return '<span class="status cancel">DIBATALKAN</span>';return inv.paid>=inv.total?'<span class="status paid">LUNAS</span>':'<span class="status">BELUM LUNAS</span>'}
 function tableInvoices(a){if(!a.length)return '<div class="empty">Belum ada nota.</div>';return '<div class="tablewrap"><table><thead><tr><th>No. Nota</th><th>Tanggal</th><th>Pelanggan</th><th class="num">Total</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+a.map(x=>`<tr><td><b>${esc(x.number)}</b></td><td>${esc(x.date)}</td><td>${esc(x.customer)}</td><td class="num">${rupiah(x.total)}</td><td>${status(x)}</td><td class="row-actions"><button class="small secondary" onclick="viewInvoice('${x.id}')">Lihat</button> <button class="small secondary" onclick="editInvoice('${x.id}')">Edit</button> <button class="small danger" onclick="deleteInvoice('${x.id}')">Hapus</button></td></tr>`).join('')+'</tbody></table></div>'}
 async function renderHistory(){let a=(await all('invoices')).sort((x,y)=>y.date.localeCompare(x.date));let q=(document.getElementById('searchInvoice').value||'').toLowerCase();a=a.filter(x=>(x.number+x.customer).toLowerCase().includes(q));document.getElementById('historyTable').innerHTML=tableInvoices(a)}
@@ -897,7 +925,32 @@ async function deleteInvoice(id){
  await del('invoices',id);
  showPage('history');
 }
-async function recordPayment(id){let x=(await all('invoices')).find(z=>z.id===id);let left=x.total-(x.paid||0);if(left<=0){alert('Nota sudah lunas.');return}let v=prompt('Masukkan nominal pembayaran. Sisa tagihan: '+rupiah(left));if(v===null)return;let n=Number(v);if(!Number.isFinite(n)||n<=0||n>left){alert('Nominal tidak valid.');return}let method=prompt('Metode pembayaran (Tunai/Transfer/QRIS):','Transfer')||'Transfer';await put('payments',{id:uid(),invoiceId:id,amount:n,date:dateNow(),method,status:'BERHASIL'});x.paid=(x.paid||0)+n;x.status=x.paid>=x.total?'LUNAS':'BELUM LUNAS';await put('invoices',x);viewInvoice(id)}
+let paymentInvoiceId=null;
+async function recordPayment(id){
+ let x=(await all('invoices')).find(z=>z.id===id); if(!x)return;
+ let left=x.total-(x.paid||0); if(left<=0){alert('Nota sudah lunas.');return}
+ paymentInvoiceId=id;
+ document.getElementById('paymentTotal').textContent=rupiah(x.total);
+ document.getElementById('paymentPaid').textContent=rupiah(x.paid||0);
+ document.getElementById('paymentLeft').textContent=rupiah(left);
+ const amount=document.getElementById('paymentAmount'); amount.value=left; amount.max=left;
+ document.getElementById('paymentMethod').value='Transfer';
+ document.getElementById('paymentModal').classList.add('show');
+ setTimeout(()=>{amount.focus();amount.select()},50);
+}
+function closePaymentModal(){paymentInvoiceId=null;document.getElementById('paymentModal').classList.remove('show')}
+async function confirmPayment(){
+ if(!paymentInvoiceId)return;
+ let x=(await all('invoices')).find(z=>z.id===paymentInvoiceId); if(!x){closePaymentModal();return}
+ let left=x.total-(x.paid||0), n=Number(document.getElementById('paymentAmount').value), method=document.getElementById('paymentMethod').value;
+ if(!Number.isFinite(n)||n<=0||n>left){alert('Nominal tidak valid. Maksimal '+rupiah(left)+'.');return}
+ if(!['Tunai','Transfer','QRIS'].includes(method)){alert('Pilih metode pembayaran.');return}
+ await put('payments',{id:uid(),invoiceId:x.id,amount:n,date:dateNow(),method,status:'BERHASIL'});
+ x.paid=(x.paid||0)+n; x.status=x.paid>=x.total?'LUNAS':'BELUM LUNAS'; await put('invoices',x);
+ closePaymentModal(); viewInvoice(x.id);
+}
+document.getElementById('paymentModal').addEventListener('click',e=>{if(e.target.id==='paymentModal')closePaymentModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('paymentModal').classList.contains('show'))closePaymentModal()})
 async function editInvoice(id){let x=(await all('invoices')).find(z=>z.id===id);if(!x)return;if((x.paid||0)>0&&!confirm('Nota sudah memiliki pembayaran. Mengubah nilai nota dapat memengaruhi sisa tagihan. Lanjutkan?'))return;editingId=id;showPage('create');document.getElementById('formTitle').textContent='Edit Nota';for(let [k,v] of Object.entries({invNo:x.number,invDate:x.date,invDue:x.due,invCustomer:x.customer,invPhone:x.phone,invDiscount:x.discount}))document.getElementById(k).value=v||'';document.getElementById('items').innerHTML='';x.items.forEach(r=>addItem(r));calc()}
 async function shareInvoice(id){
  let x=(await all('invoices')).find(z=>z.id===id);if(!x)return;

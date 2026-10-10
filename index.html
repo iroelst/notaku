@@ -943,8 +943,17 @@ async function renderOwnerUsers(){
  if(!isOwner||!currentUser)return;
  const target=document.getElementById('ownerUsersTable');target.innerHTML='<div class="empty">Memuat daftar pengguna...</div>';
  try{
-  const snap=await cloud.collection('users').orderBy('createdAt','desc').get();
-  const users=snap.docs.map(d=>d.data());
+  // Ambil seluruh dokumen tanpa orderBy. Firestore orderBy('createdAt') tidak
+  // mengembalikan dokumen yang belum memiliki field createdAt, sehingga akun
+  // lama/hasil pendaftaran sebelumnya dapat hilang dari dashboard pemilik.
+  const snap=await cloud.collection('users').get();
+  const users=snap.docs.map(d=>({ ...d.data(), uid:d.data().uid || d.id }));
+  // Urutkan di browser agar dokumen tanpa createdAt tetap terlihat.
+  users.sort((a,b)=>{
+    const ta=a.createdAt&&typeof a.createdAt.toMillis==='function'?a.createdAt.toMillis():0;
+    const tb=b.createdAt&&typeof b.createdAt.toMillis==='function'?b.createdAt.toMillis():0;
+    return tb-ta;
+  });
   if(!users.length){target.innerHTML='<div class="empty">Belum ada pengguna terdaftar.</div>';return}
   const wrap=document.createElement('div');wrap.className='tablewrap';
   const table=document.createElement('table');table.innerHTML='<thead><tr><th>Email</th><th>Status</th><th>Terdaftar</th><th>Aksi</th></tr></thead><tbody></tbody>';

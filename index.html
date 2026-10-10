@@ -812,13 +812,39 @@ header .brand{flex:1}
 .payment-modal-actions{display:flex;gap:8px;margin-top:16px}
 .payment-modal-actions button{flex:1}
 @media(max-width:480px){.payment-modal{padding:12px}.payment-modal-card{padding:16px;border-radius:16px}}
+
+/* Firebase login and account approval */
+#authGate{display:none;min-height:100dvh;padding:22px 14px;background:linear-gradient(145deg,#eaf3fc,#f8fbff);align-items:center;justify-content:center}
+body.auth-mode #authGate{display:flex}body.auth-mode>header,body.auth-mode>.wrap,body.auth-mode>footer{display:none!important}
+.auth-card{width:min(100%,440px);background:#fff;border:1px solid #dce7f2;border-radius:22px;padding:25px;box-shadow:0 18px 55px #123d7018}
+.auth-brand{text-align:center;color:var(--navy);margin-bottom:22px}.auth-brand .logo{margin:0 auto 10px;background:linear-gradient(135deg,var(--navy),var(--blue));color:#fff;width:56px;height:56px;font-size:25px}
+.auth-card h2{margin:0 0 6px;color:var(--navy)}.auth-card .hint{margin-bottom:16px}.auth-card form>div{margin:12px 0}.auth-card .actions button{flex:1}.auth-msg{border-radius:10px;background:#eef5fc;padding:11px;margin:12px 0;color:#234b73;display:none}.auth-msg.error{background:#fff0f1;color:#a92332}.auth-msg.show{display:block}
+#ownerPage .tablewrap{margin-top:12px}.account-chip{font-size:12px;color:#fff;opacity:.9;text-align:right;max-width:220px;overflow-wrap:anywhere}
+@media(max-width:480px){.auth-card{padding:20px}.account-chip{display:none}}
 </style>
 </head>
-<body>
-<header><button id="sidebarToggle" class="menu-toggle no-print" type="button" aria-label="Buka atau sembunyikan menu" aria-expanded="true">☰</button><div class="brand"><div class="logo">▤</div><div><h1>NOTA DIGITAL</h1><small>Manajemen nota barang & pembayaran</small></div></div><div id="clock" class="no-print"></div></header>
+<body class="auth-mode">
+<section id="authGate" aria-live="polite">
+ <div class="auth-card">
+  <div class="auth-brand"><div class="logo">▤</div><h1 style="margin:0;font-size:22px">NOTA DIGITAL</h1><div class="muted">Login dan pendaftaran pengguna</div></div>
+  <div id="authMessage" class="auth-msg"></div>
+  <div id="authFormWrap">
+   <h2 id="authTitle">Masuk ke akun</h2><div id="authSubtitle" class="hint">Gunakan email dan kata sandi Anda.</div>
+   <form id="authForm">
+    <div><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" required placeholder="nama@email.com"></div>
+    <div><label for="authPassword">Kata sandi</label><input id="authPassword" type="password" minlength="6" autocomplete="current-password" required placeholder="Minimal 6 karakter"></div>
+    <div id="confirmPasswordWrap" style="display:none"><label for="authPassword2">Ulangi kata sandi</label><input id="authPassword2" type="password" minlength="6" autocomplete="new-password" placeholder="Ulangi kata sandi"></div>
+    <div class="actions"><button id="authSubmit" type="submit">Masuk</button></div>
+   </form>
+   <div class="actions"><button type="button" id="toggleAuthMode" class="secondary">Belum punya akun? Daftar</button><button type="button" id="forgotPassword" class="secondary">Lupa sandi</button></div>
+  </div>
+  <div id="pendingWrap" style="display:none"><h2 id="pendingTitle">Akun menunggu persetujuan</h2><p id="pendingText" class="muted">Pendaftaran Anda berhasil. Pemilik aplikasi perlu menyetujui akun ini sebelum Anda dapat menggunakan Nota Digital.</p><div class="actions"><button id="resendVerification" type="button" style="display:none">Kirim ulang email verifikasi</button><button id="checkApproval" type="button">Periksa status</button><button id="pendingLogout" type="button" class="secondary">Keluar</button></div></div>
+ </div>
+</section>
+<header><button id="sidebarToggle" class="menu-toggle no-print" type="button" aria-label="Buka atau sembunyikan menu" aria-expanded="true">☰</button><div class="brand"><div class="logo">▤</div><div><h1>NOTA DIGITAL</h1><small>Manajemen nota barang & pembayaran</small></div></div><div id="clock" class="no-print"></div><div id="accountChip" class="account-chip no-print"></div><button id="logoutBtn" class="secondary no-print" type="button" style="background:#ffffff20;color:#fff;border:1px solid #ffffff45">Keluar</button></header>
 <div class="wrap">
 <nav class="no-print">
-<button class="active" data-page="dashboard">▦ Dashboard</button><button data-page="create">＋ Buat Nota</button><button data-page="history">▤ Histori Nota</button><button data-page="customers">♙ Pelanggan</button><button data-page="profile">⚙ Profil Usaha</button>
+<button class="active" data-page="dashboard">▦ Dashboard</button><button id="ownerNav" data-page="ownerPage" style="display:none">♙ Pemilik Aplikasi</button><button data-page="create">＋ Buat Nota</button><button data-page="history">▤ Histori Nota</button><button data-page="customers">♙ Pelanggan</button><button data-page="profile">⚙ Profil Usaha</button>
 </nav>
 <div id="sidebarBackdrop" class="sidebar-backdrop no-print"></div>
 <main>
@@ -869,16 +895,68 @@ header .brand{flex:1}
 <div><label for="paymentAmount">Nominal Pembayaran</label><input id="paymentAmount" type="number" min="1" step="1" inputmode="numeric" placeholder="Masukkan nominal"></div>
 <div style="margin-top:11px"><label for="paymentMethod">Metode Pembayaran</label><select id="paymentMethod"><option value="Tunai">Tunai</option><option value="Transfer">Transfer</option><option value="QRIS">QRIS</option></select></div>
 <div class="payment-modal-actions"><button type="button" class="secondary" onclick="closePaymentModal()">Batal</button><button type="button" onclick="confirmPayment()">Simpan Pembayaran</button></div>
-</div></div><section id="invoicePrint" class="page"></section>
-</main></div><footer>NOTA DIGITAL • Data disimpan pada perangkat/browser ini. Lakukan backup secara berkala.</footer>
+</div></div><section id="ownerPage" class="page">
+<div class="titlebar"><div><h2>Pemilik Aplikasi</h2><div class="muted">Kelola akun pengguna Nota Digital</div></div><button class="secondary" onclick="renderOwnerUsers()">Muat Ulang</button></div>
+<div class="panel"><h3>Persetujuan Akun</h3><div class="hint">Pengguna yang baru mendaftar tidak dapat membuka data sebelum disetujui.</div><div id="ownerUsersTable"><div class="empty">Memuat daftar pengguna...</div></div></div>
+</section><section id="invoicePrint" class="page"></section>
+</main></div><footer>NOTA DIGITAL • Data tersimpan di cloud pada akun Anda. Lakukan backup secara berkala.</footer>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <script>
-const DB='NotaDigitalDB',STORE=['profile','customers','services','invoices','payments'];let db,editingId=null,logoData='';
+const firebaseConfig={apiKey:"AIzaSyBNLCPP6hr8vSURUCKgmbA-64IcwllF45g",authDomain:"nota-digital-iroel.firebaseapp.com",projectId:"nota-digital-iroel",storageBucket:"nota-digital-iroel.firebasestorage.app",messagingSenderId:"646015881073",appId:"1:646015881073:web:d9100ee9784f082d97b0d0"};
+firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(), cloud=firebase.firestore();
+const OWNER_EMAIL='iroel.setyawan@gmail.com';let currentUser=null,currentUserDoc=null,isOwner=false,authMode='login',authReady=false;
+function showAuthMessage(message,error=false){const el=document.getElementById('authMessage');el.textContent=message;el.className='auth-msg show'+(error?' error':'')}
+function clearAuthMessage(){const el=document.getElementById('authMessage');el.textContent='';el.className='auth-msg'}
+function setAuthMode(mode){authMode=mode;clearAuthMessage();const signup=mode==='signup';document.getElementById('authTitle').textContent=signup?'Buat akun baru':'Masuk ke akun';document.getElementById('authSubtitle').textContent=signup?'Daftar menggunakan email dan kata sandi. Akun baru menunggu persetujuan pemilik.':'Gunakan email dan kata sandi Anda.';document.getElementById('confirmPasswordWrap').style.display=signup?'block':'none';document.getElementById('authPassword2').required=signup;document.getElementById('authPassword').autocomplete=signup?'new-password':'current-password';document.getElementById('authSubmit').textContent=signup?'Daftar':'Masuk';document.getElementById('toggleAuthMode').textContent=signup?'Sudah punya akun? Masuk':'Belum punya akun? Daftar';document.getElementById('forgotPassword').style.display=signup?'none':'inline-block'}
+function showAuthGate(mode='login'){document.body.classList.add('auth-mode');document.getElementById('authFormWrap').style.display=mode==='pending'?'none':'block';document.getElementById('pendingWrap').style.display=mode==='pending'?'block':'none';if(mode!=='pending')setAuthMode(mode)}
+function showApp(){document.body.classList.remove('auth-mode');document.getElementById('accountChip').textContent=currentUser?.email||'';document.getElementById('ownerNav').style.display=isOwner?'flex':'none';document.getElementById('clock').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+async function ensureUserDoc(user){const ref=cloud.collection('users').doc(user.uid);let snap=await ref.get();const owner=(user.email||'').toLowerCase()===OWNER_EMAIL;if(!snap.exists){const data={uid:user.uid,email:(user.email||'').toLowerCase(),status:owner?'approved':'pending',role:owner?'owner':'user',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()};await ref.set(data);snap=await ref.get()}else if(owner&&(snap.data().status!=='approved'||snap.data().role!=='owner')){await ref.update({status:'approved',role:'owner',updatedAt:firebase.firestore.FieldValue.serverTimestamp()});snap=await ref.get()}return snap.data()}
+async function handleSignedIn(user){currentUser=user;try{if(!user.emailVerified){showAuthGate('pending');document.getElementById('pendingTitle').textContent='Verifikasi email terlebih dahulu';document.getElementById('pendingText').textContent='Kami telah meminta Anda memverifikasi email. Buka tautan di email dari Firebase, lalu masuk kembali.';document.getElementById('resendVerification').style.display='inline-block';document.getElementById('checkApproval').style.display='none';showAuthMessage('Email belum terverifikasi.');return}document.getElementById('resendVerification').style.display='none';document.getElementById('checkApproval').style.display='inline-block';currentUserDoc=await ensureUserDoc(user);isOwner=(user.email||'').toLowerCase()===OWNER_EMAIL&&user.emailVerified&&currentUserDoc.role==='owner'&&currentUserDoc.status==='approved';if(currentUserDoc.status!=='approved'&&!isOwner){showAuthGate('pending');document.getElementById('pendingTitle').textContent=currentUserDoc.status==='rejected'?'Pendaftaran ditolak':(currentUserDoc.status==='disabled'?'Akun dinonaktifkan':'Akun menunggu persetujuan');document.getElementById('pendingText').textContent=currentUserDoc.status==='rejected'?'Pemilik aplikasi menolak pendaftaran akun ini. Hubungi pemilik jika Anda merasa ini keliru.':(currentUserDoc.status==='disabled'?'Akses akun ini dinonaktifkan oleh pemilik aplikasi. Hubungi pemilik untuk informasi lebih lanjut.':'Pendaftaran berhasil. Pemilik aplikasi perlu menyetujui akun ini sebelum Anda dapat menggunakan Nota Digital.');showAuthMessage('Status akun: '+(currentUserDoc.status||'pending')+'.');return}showApp();db=true;await resetForm();await renderDashboard();if(isOwner)await renderOwnerUsers()}catch(e){console.error(e);showAuthGate('login');showAuthMessage('Tidak dapat memuat akun/database. Pastikan Authentication dan Firestore sudah aktif serta aturan keamanan sudah dipasang. Detail: '+(e.message||e),true)}}
+auth.onAuthStateChanged(async user=>{if(!user){currentUser=null;currentUserDoc=null;isOwner=false;db=null;document.getElementById('pendingTitle').textContent='Akun menunggu persetujuan';document.getElementById('pendingText').textContent='Pendaftaran Anda berhasil. Pemilik aplikasi perlu menyetujui akun ini sebelum Anda dapat menggunakan Nota Digital.';document.getElementById('resendVerification').style.display='none';document.getElementById('checkApproval').style.display='inline-block';showAuthGate('login');authReady=true;return}await handleSignedIn(user)});
+document.getElementById('authForm').addEventListener('submit',async e=>{e.preventDefault();clearAuthMessage();const email=document.getElementById('authEmail').value.trim().toLowerCase(),password=document.getElementById('authPassword').value;const btn=document.getElementById('authSubmit');btn.disabled=true;try{if(authMode==='signup'){if(password!==document.getElementById('authPassword2').value)throw new Error('Konfirmasi kata sandi tidak sama.');const cred=await auth.createUserWithEmailAndPassword(email,password);await cred.user.sendEmailVerification();await auth.signOut();setAuthMode('login');showAuthMessage('Pendaftaran berhasil. Buka email Anda dan klik tautan verifikasi sebelum masuk.')}else{await auth.signInWithEmailAndPassword(email,password)}}catch(err){console.error(err);const messages={'auth/email-already-in-use':'Email sudah terdaftar. Silakan masuk.','auth/invalid-email':'Format email tidak valid.','auth/weak-password':'Kata sandi terlalu lemah. Gunakan minimal 6 karakter.','auth/invalid-credential':'Email atau kata sandi salah.','auth/network-request-failed':'Koneksi internet bermasalah. Coba lagi.'};showAuthMessage(messages[err.code]||err.message||'Proses gagal.',true)}finally{btn.disabled=false}});
+document.getElementById('toggleAuthMode').onclick=()=>setAuthMode(authMode==='login'?'signup':'login');
+document.getElementById('forgotPassword').onclick=async()=>{const email=document.getElementById('authEmail').value.trim();if(!email){showAuthMessage('Masukkan email terlebih dahulu.',true);return}try{await auth.sendPasswordResetEmail(email);showAuthMessage('Jika email terdaftar, tautan untuk mengatur ulang kata sandi akan dikirim.')}catch(e){showAuthMessage(e.message,true)}};
+document.getElementById('pendingLogout').onclick=()=>auth.signOut();document.getElementById('logoutBtn').onclick=()=>auth.signOut();document.getElementById('resendVerification').onclick=async()=>{try{if(auth.currentUser){await auth.currentUser.sendEmailVerification();showAuthMessage('Email verifikasi dikirim ulang. Periksa kotak masuk dan folder spam.')}else showAuthMessage('Keluar lalu masuk kembali untuk meminta email verifikasi.',true)}catch(e){showAuthMessage(e.message,true)}};document.getElementById('checkApproval').onclick=async()=>{if(currentUser){try{currentUserDoc=await ensureUserDoc(currentUser);if(currentUserDoc.status==='approved'){await handleSignedIn(currentUser)}else showAuthMessage('Akun masih '+(currentUserDoc.status||'pending')+'. Silakan coba lagi nanti.')}catch(e){showAuthMessage('Gagal memeriksa status: '+e.message,true)}}};
+async function renderOwnerUsers(){
+ if(!isOwner||!currentUser)return;
+ const target=document.getElementById('ownerUsersTable');target.innerHTML='<div class="empty">Memuat daftar pengguna...</div>';
+ try{
+  const snap=await cloud.collection('users').orderBy('createdAt','desc').get();
+  const users=snap.docs.map(d=>d.data());
+  if(!users.length){target.innerHTML='<div class="empty">Belum ada pengguna terdaftar.</div>';return}
+  const wrap=document.createElement('div');wrap.className='tablewrap';
+  const table=document.createElement('table');table.innerHTML='<thead><tr><th>Email</th><th>Status</th><th>Terdaftar</th><th>Aksi</th></tr></thead><tbody></tbody>';
+  const tbody=table.querySelector('tbody');
+  users.forEach(u=>{
+   const status=String(u.status||'pending'),tr=document.createElement('tr');
+   const date=u.createdAt&&u.createdAt.toDate?u.createdAt.toDate().toLocaleDateString('id-ID'):'-';
+   const emailTd=document.createElement('td');emailTd.textContent=u.email||'-';
+   const statusTd=document.createElement('td');const badge=document.createElement('span');badge.className='status '+(status==='approved'?'paid':(['rejected','disabled'].includes(status)?'cancel':''));badge.textContent=status.toUpperCase();statusTd.appendChild(badge);
+   const dateTd=document.createElement('td');dateTd.textContent=date;
+   const actionTd=document.createElement('td');actionTd.className='row-actions';
+   if((u.email||'').toLowerCase()===OWNER_EMAIL){actionTd.textContent='Pemilik'}else{
+    const addAction=(label,next,cls='')=>{const b=document.createElement('button');b.type='button';b.className='small '+cls;b.textContent=label;b.style.margin='2px';b.onclick=()=>setUserStatus(String(u.uid||''),next);actionTd.appendChild(b)};
+    if(status!=='approved')addAction('Setujui','approved');
+    if(status!=='rejected')addAction('Tolak','rejected','danger');
+    if(status!=='disabled')addAction('Nonaktifkan','disabled','secondary');
+    if(status==='disabled'||status==='rejected')addAction('Aktifkan kembali','pending','secondary');
+   }
+   tr.append(emailTd,statusTd,dateTd,actionTd);tbody.appendChild(tr);
+  });wrap.appendChild(table);target.replaceChildren(wrap);
+ }catch(e){console.error(e);target.innerHTML='<div class="empty">Gagal memuat pengguna: '+esc(e.message)+'</div>'}
+}
+async function setUserStatus(uid,status){if(!isOwner||!['approved','rejected','disabled','pending'].includes(status))return;if(!confirm('Ubah status akun ini menjadi '+status+'?'))return;try{await cloud.collection('users').doc(uid).update({status,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});await renderOwnerUsers();alert('Status akun berhasil diperbarui.')}catch(e){alert('Gagal mengubah status: '+e.message)}}
+const DB='NotaDigitalDB' ,STORE=['profile','customers','services','invoices','payments'];let db,editingId=null,logoData='';
 const rupiah=n=>'Rp'+Number(n||0).toLocaleString('id-ID');const moneyHTML=n=>`<span class="money-pair"><span class="money-currency">Rp</span><span class="money-value">${Number(n||0).toLocaleString('id-ID')}</span></span>`;const uid=()=>crypto.randomUUID?crypto.randomUUID():'id-'+Date.now()+'-'+Math.random().toString(16).slice(2);
-function openDB(){return new Promise((resolve,reject)=>{let r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{let d=r.result;STORE.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:'id'})})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-function all(s){return new Promise((res,rej)=>{let r=db.transaction(s).objectStore(s).getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-function put(s,v){return new Promise((res,rej)=>{let t=db.transaction(s,'readwrite');t.objectStore(s).put(v);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
-function del(s,id){return new Promise((res,rej)=>{let t=db.transaction(s,'readwrite');t.objectStore(s).delete(id);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
-function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='dashboard')renderDashboard();if(id==='history')renderHistory();if(id==='customers')renderCustomers();if(id==='profile')loadProfile();if(id==='create'&&!editingId)resetForm();window.scrollTo(0,0)}
+function openDB(){return Promise.resolve(true)}
+function recordsRef(){if(!currentUser)throw new Error('Silakan login terlebih dahulu.');return cloud.collection('users').doc(currentUser.uid).collection('records')}
+async function all(store){if(!currentUser||!db)return [];const snap=await recordsRef().where('store','==',store).get();return snap.docs.map(d=>{const x=d.data();delete x.store;return x})}
+async function put(store,value){if(!currentUser||!db)throw new Error('Sesi login belum siap.');const data={...value,store};await recordsRef().doc(store+'_'+String(value.id)).set(data)}
+async function del(store,id){if(!currentUser||!db)throw new Error('Sesi login belum siap.');await recordsRef().doc(store+'_'+String(id)).delete()}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===id));if(id==='dashboard')renderDashboard();if(id==='history')renderHistory();if(id==='customers')renderCustomers();if(id==='profile')loadProfile();if(id==='ownerPage')renderOwnerUsers();if(id==='create'&&!editingId)resetForm();window.scrollTo(0,0)}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
 function dateNow(){let d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 async function nextNo(){let a=await all('invoices'),prefix='ND-'+dateNow().slice(0,7).replace('-','')+'-';let max=a.map(x=>x.number||'').filter(x=>x.startsWith(prefix)).map(x=>+x.slice(prefix.length)).filter(Number.isFinite).reduce((m,n)=>Math.max(m,n),0);return prefix+String(max+1).padStart(4,'0')}
@@ -1034,9 +1112,10 @@ async function loadProfile(){let p=(await all('profile'))[0]||{};bizName.value=p
 logoFile.onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{logoData=r.result;logoPreview.innerHTML=`<img src="${logoData}" style="max-width:110px;max-height:80px;object-fit:contain">`};r.readAsDataURL(f)};
 profileForm.onsubmit=async e=>{e.preventDefault();await put('profile',{id:'main',name:bizName.value,phone:bizPhone.value,address:bizAddress.value,bankName:bankName.value,bankNumber:bankNumber.value,bankOwner:bankOwner.value,signerName:signerName.value.trim(),defaultNote:bizDefaultNote.value.trim(),logo:logoData});alert('Profil usaha tersimpan.')};
 backup.onclick=async()=>{let data={version:1,exportedAt:new Date().toISOString()};for(let s of STORE)data[s]=await all(s);let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-nota-digital-'+dateNow()+'.json';a.click();URL.revokeObjectURL(a.href)};
-restore.onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());if(!confirm('Pulihkan backup? Data pada perangkat akan diganti.'))return;for(let s of STORE){let t=db.transaction(s,'readwrite');t.objectStore(s).clear();(data[s]||[]).forEach(x=>t.objectStore(s).put(x));await new Promise((r,j)=>{t.oncomplete=r;t.onerror=()=>j(t.error)})}alert('Backup berhasil dipulihkan.');location.reload()}catch(err){alert('File backup tidak valid.')}}
+restore.onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());if(!confirm('Pulihkan backup? Data pada perangkat akan diganti.'))return;for(let s of STORE){const existing=await all(s);for(const x of existing)await del(s,x.id);for(const x of (data[s]||[]))await put(s,x)}alert('Backup berhasil dipulihkan ke akun cloud ini.');location.reload()}catch(err){alert('File backup tidak valid.')}}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-(async()=>{try{db=await openDB();await resetForm();await renderDashboard();document.getElementById('clock').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}catch(e){alert('Browser tidak mendukung penyimpanan lokal aplikasi.')}})();
+// Aplikasi baru dimuat setelah Firebase Authentication memastikan akun disetujui.
+
 </script>
 
 <script>
